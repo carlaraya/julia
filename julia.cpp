@@ -1,4 +1,3 @@
-//Using SDL and standard IO
 #include <SDL2/SDL.h>
 #include <stdio.h>
 
@@ -19,15 +18,6 @@ const int maxIter = 100;
 double cRe = 0;
 double cIm = 0;
 
-/**
- * 000,000,255 0
- * 000,255,255 20
- * 000,255,000 40
- * 255,255,000 60
- * 255,127,000 80
- * 255,000,000 100
- */
-
 int colors[maxIter+1];
 const int bn = 6;
 int between[][3] = { {150,0,0}, {255,255,0}, {0,255,0}, {0,255,255}, {0,127,255}, {0,0,255} };
@@ -35,10 +25,7 @@ int between[][3] = { {150,0,0}, {255,255,0}, {0,255,0}, {0,255,255}, {0,127,255}
 //Starts up SDL and creates window
 bool init();
 
-//Loads media
-bool loadMedia();
-
-//Frees media and shuts down SDL
+//Shuts down SDL
 void close();
 
 //The window we'll be rendering to
@@ -46,9 +33,6 @@ SDL_Window* gWindow = NULL;
 	
 //The surface contained by the window
 SDL_Surface* gScreenSurface = NULL;
-
-//The image we will load and show on the screen
-SDL_Surface* gXOut = NULL;
 
 //Convert pixel coordinates to complex number
 void coord2z(int x, int y, double* a, double* b);
@@ -59,8 +43,9 @@ void PutPixel32_nolock(SDL_Surface * surface, int x, int y, Uint32 color);
 //Generate julia set
 void generateJulia();
 
-int main( int argc, char* args[] )
+int main(int argc, char* args[])
 {
+    //Colors and stuff
     int ci = 0;
     int segment = maxIter / (bn - 1);
     for (int bi = 0; bi < (bn - 1); bi++)
@@ -71,20 +56,19 @@ int main( int argc, char* args[] )
             colors[ci] = 0;
             for (int chan = 0; chan < 3; chan++)
             {
-                curr[chan] = (int)((((double) between[bi+1][chan]) - between[bi][chan]) / segment * i) + between[bi][chan];
+                curr[chan] = (int)((((double)between[bi+1][chan])- between[bi][chan])/ segment * i)+ between[bi][chan];
                 colors[ci] += curr[chan] << (8 * chan);
             }
-            printf("%d %d %d %d\n", curr[0], curr[1], curr[2], ci);
-            
+            //printf("%d %d %d %d\n", curr[0], curr[1], curr[2], ci);
             ci++;
         }
     }
     colors[maxIter] = 0;
 
 	//Start up SDL and create window
-	if( !init() )
+	if(!init())
 	{
-		printf( "Failed to initialize!\n" );
+		printf("Failed to initialize!\n");
 	}
 	else
 	{
@@ -94,23 +78,21 @@ int main( int argc, char* args[] )
         //Event handler
         SDL_Event e;
 
-        //Fill the surface white
-        SDL_FillRect( gScreenSurface, NULL, SDL_MapRGB( gScreenSurface->format, 0xFF, 0xFF, 0xFF ) );
-
         //Generate julia set
         generateJulia();
 
         //While application is running
-        while( !quit )
+        while(!quit)
         {
             //Handle events on queue
-            while( SDL_PollEvent( &e ) != 0 )
+            while(SDL_PollEvent(&e)!= 0)
             {
                 //User requests quit
-                if( e.type == SDL_QUIT )
+                if(e.type == SDL_QUIT)
                 {
                     quit = true;
                 }
+                //If mouse clicked, generate julia set
                 else if (e.type == SDL_MOUSEBUTTONDOWN)
                 {
                     if (e.button.button == SDL_BUTTON_LEFT)
@@ -123,7 +105,7 @@ int main( int argc, char* args[] )
             }
 
             //Update the surface
-            SDL_UpdateWindowSurface( gWindow );
+            SDL_UpdateWindowSurface(gWindow);
         }
 	}
 
@@ -139,24 +121,24 @@ bool init()
 	bool success = true;
 
 	//Initialize SDL
-	if( SDL_Init( SDL_INIT_VIDEO ) < 0 )
+	if(SDL_Init(SDL_INIT_VIDEO)< 0)
 	{
-		printf( "SDL could not initialize! SDL_Error: %s\n", SDL_GetError() );
+		printf("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
 		success = false;
 	}
 	else
 	{
 		//Create window
-		gWindow = SDL_CreateWindow( "julia", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN );
-		if( gWindow == NULL )
+		gWindow = SDL_CreateWindow("julia", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
+		if(gWindow == NULL)
 		{
-			printf( "Window could not be created! SDL_Error: %s\n", SDL_GetError() );
+			printf("Window could not be created! SDL_Error: %s\n", SDL_GetError());
 			success = false;
 		}
 		else
 		{
 			//Get window surface
-			gScreenSurface = SDL_GetWindowSurface( gWindow );
+			gScreenSurface = SDL_GetWindowSurface(gWindow);
 		}
 	}
 
@@ -165,29 +147,23 @@ bool init()
 
 void close()
 {
-	//Deallocate surface
-	SDL_FreeSurface( gXOut );
-	gXOut = NULL;
-
-	//Destroy window
-	SDL_DestroyWindow( gWindow );
+	SDL_DestroyWindow(gWindow);
 	gWindow = NULL;
 
-	//Quit SDL subsystems
 	SDL_Quit();
 }
 
 void PutPixel32_nolock(SDL_Surface * surface, int x, int y, Uint32 color)
 {
     Uint8 * pixel = (Uint8*)surface->pixels;
-    pixel += (y * surface->pitch) + (x * sizeof(Uint32));
-    *((Uint32*)pixel) = color;
+    pixel += (y * surface->pitch)+ (x * sizeof(Uint32));
+    *((Uint32*)pixel)= color;
 }
 
 void coord2z(int x, int y, double* a, double* b)
 {
-    *a = (double) (x - SCREEN_WIDTH / 2) / pixelsPerUnit;
-    *b = (double) (y - SCREEN_HEIGHT / 2) / pixelsPerUnit;
+    *a = (double)(x - SCREEN_WIDTH / 2)/ pixelsPerUnit;
+    *b = (double)(y - SCREEN_HEIGHT / 2)/ pixelsPerUnit;
 }
 
 void generateJulia()
@@ -196,6 +172,7 @@ void generateJulia()
     {
         for (int x = 0; x < SCREEN_WIDTH; x++)
         {
+            //Do this stuff for every pixel
             int escaped = 0;
             double a, b;
             double a2, b2;
@@ -206,6 +183,7 @@ void generateJulia()
             int i;
             for (i = 0; i < maxIter; i++)
             {
+                //Math
                 a3 = a2*a2 - b2*b2 + cRe;
                 b3 = 2*a2*b2 + cIm;
                 a2 = a3;
